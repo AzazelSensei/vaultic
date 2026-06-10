@@ -39,4 +39,43 @@ describe('loadManifest', () => {
     const bad = VALID.replace('OPENAI_API_KEY:', 'openai_key:');
     expect(() => loadManifest(writeTmpManifest(bad))).toThrow(/env var name/i);
   });
+  it('bozuk YAML için Invalid .aiv.yaml hatası fırlatır', () => {
+    expect(() => loadManifest(writeTmpManifest('workspace: [unclosed'))).toThrow(
+      /Invalid \.aiv\.yaml in/,
+    );
+  });
+  it('boş dosya için Invalid .aiv.yaml hatası fırlatır', () => {
+    expect(() => loadManifest(writeTmpManifest(''))).toThrow(/Invalid \.aiv\.yaml in/);
+  });
+  it('bilinmeyen anahtarı reddeder (mod typo sessizce paranoid düşürmesin)', () => {
+    const typo = VALID.replace('mode: standard', 'mod: paranoid');
+    expect(() => loadManifest(writeTmpManifest(typo))).toThrow(/Invalid \.aiv\.yaml in/);
+  });
+  it('ref yerine yapıştırılan secret\'ı redact eder ve env adını söyler', () => {
+    const secret = 'sk-proj-' + 'B'.repeat(40);
+    const bad = VALID.replace(
+      'vault://blackhole-labs/payment-api/prod/OPENAI_API_KEY',
+      secret,
+    );
+    try {
+      loadManifest(writeTmpManifest(bad));
+      expect.unreachable('loadManifest fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toContain('redacted');
+      expect(message).not.toContain(secret);
+      expect(message).not.toContain('sk-proj-');
+      expect(message).toContain('OPENAI_API_KEY');
+      expect(message).toMatch(/Invalid vault reference/);
+    }
+  });
+  it('cross-workspace referansa bilinçli olarak izin verilir', () => {
+    const cross = VALID.replace(
+      'vault://blackhole-labs/payment-api/prod/OPENAI_API_KEY',
+      'vault://other-ws/proj/dev/KEY',
+    );
+    const m = loadManifest(writeTmpManifest(cross));
+    expect(m?.workspace).toBe('blackhole-labs');
+    expect(m?.needs.OPENAI_API_KEY).toBe('vault://other-ws/proj/dev/KEY');
+  });
 });

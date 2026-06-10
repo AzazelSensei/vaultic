@@ -26,7 +26,7 @@ describe('parseVaultRef', () => {
     expect(() => parseVaultRef(bad)).toThrow(/Invalid vault reference/);
   });
 
-  it('hata mesajında uzun girdiyi 32 karaktere kısaltır', () => {
+  it('vault:// ile başlamayan uzun girdiyi redact eder', () => {
     const longInput = 'x'.repeat(200);
     expect(() => parseVaultRef(longInput)).toThrow(/Invalid vault reference/);
     try {
@@ -34,9 +34,46 @@ describe('parseVaultRef', () => {
       expect.unreachable('parseVaultRef fırlatmalıydı');
     } catch (err) {
       const message = (err as Error).message;
+      expect(message).toContain('redacted');
+      expect(message).not.toContain('xxx');
+    }
+  });
+
+  it('vault:// ile başlayan uzun girdiyi 32 karaktere kısaltır', () => {
+    const longInput = 'vault://' + 'x'.repeat(200);
+    expect(() => parseVaultRef(longInput)).toThrow(/Invalid vault reference/);
+    try {
+      parseVaultRef(longInput);
+      expect.unreachable('parseVaultRef fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
       expect(message).not.toContain(longInput);
-      expect(message).toContain('x'.repeat(32) + '…');
-      expect(message).not.toContain('x'.repeat(33));
+      expect(message).toContain('vault://' + 'x'.repeat(24) + '…');
+      expect(message).not.toContain('x'.repeat(25));
+    }
+  });
+
+  it('ref yerine yapıştırılan raw secret prefix\'ini sızdırmaz', () => {
+    const secret = 'sk-proj-' + 'A'.repeat(60);
+    expect(() => parseVaultRef(secret)).toThrow(/Invalid vault reference/);
+    try {
+      parseVaultRef(secret);
+      expect.unreachable('parseVaultRef fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toContain('redacted');
+      expect(message).not.toContain('sk-proj-');
+      expect(message).toBe('Invalid vault reference (value does not start with vault://, redacted)');
+    }
+  });
+
+  it('vault:// ile başlayan geçersiz girdiyi hata mesajında gösterir', () => {
+    expect(() => parseVaultRef('vault://bad/REF')).toThrow(/Invalid vault reference/);
+    try {
+      parseVaultRef('vault://bad/REF');
+      expect.unreachable('parseVaultRef fırlatmalıydı');
+    } catch (err) {
+      expect((err as Error).message).toContain('vault://bad/REF');
     }
   });
 });
