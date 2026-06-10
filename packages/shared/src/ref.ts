@@ -8,7 +8,7 @@ export interface VaultRef {
 const REF_PATTERN =
   /^vault:\/\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)\/([A-Z][A-Z0-9_]*)$/;
 
-const MAX_ECHOED_REF_LENGTH = 120;
+const MAX_ECHOED_REF_LENGTH = 32;
 
 export function parseVaultRef(ref: string): VaultRef {
   const m = REF_PATTERN.exec(ref);

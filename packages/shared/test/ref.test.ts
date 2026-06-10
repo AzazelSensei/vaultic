@@ -26,7 +26,7 @@ describe('parseVaultRef', () => {
     expect(() => parseVaultRef(bad)).toThrow(/Invalid vault reference/);
   });
 
-  it('hata mesajında uzun girdiyi 120 karaktere kısaltır', () => {
+  it('hata mesajında uzun girdiyi 32 karaktere kısaltır', () => {
     const longInput = 'x'.repeat(200);
     expect(() => parseVaultRef(longInput)).toThrow(/Invalid vault reference/);
     try {
@@ -35,8 +35,8 @@ describe('parseVaultRef', () => {
     } catch (err) {
       const message = (err as Error).message;
       expect(message).not.toContain(longInput);
-      expect(message).toContain('x'.repeat(120) + '…');
-      expect(message).not.toContain('x'.repeat(121));
+      expect(message).toContain('x'.repeat(32) + '…');
+      expect(message).not.toContain('x'.repeat(33));
     }
   });
 });
