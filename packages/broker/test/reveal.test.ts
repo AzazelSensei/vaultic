@@ -66,6 +66,19 @@ describe('vaultRevealRequest', () => {
   it('geçersiz ref reddedilir', async () => {
     await expect(vaultRevealRequest(deps('approved'), { ref: 'not-a-ref', reason: 'x' })).rejects.toThrow(/Invalid vault reference/);
   });
+  it('kısa değer (5 char) için fingerprint atlanır, hata fırlatmaz, değeri döner', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rev3-'));
+    const shortBackend: VaultBackend = { listSecrets: async () => [], getSecretValue: async () => 'short', setSecret: async () => {} };
+    const d = {
+      backend: shortBackend,
+      approver: { channel: 'touchid' as const, isAvailable: () => true, requestApproval: async () => 'approved' as const },
+      audit: new AuditLog(join(dir, 'audit.jsonl')),
+      fingerprints: new FingerprintStore(join(dir, 'fp.json')),
+    };
+    const r = await vaultRevealRequest(d, { ref: 'vault://ws/proj/prod/SHORT_KEY', reason: 'x' });
+    expect(r.value).toBe('short');
+    expect(d.fingerprints.containsSecret('short')).toBe(false);
+  });
 });
 
 describe('vaultSetRequest', () => {

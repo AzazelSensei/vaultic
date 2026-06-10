@@ -2,14 +2,7 @@ import { parseVaultRef, type FingerprintStore } from '@vaultic/shared';
 import type { AuditLog } from '../audit.js';
 import type { ApprovalProvider } from '../approval/types.js';
 import type { VaultBackend } from '../backend.js';
-
-function fingerprintValue(fingerprints: FingerprintStore, value: string): void {
-  try {
-    fingerprints.addValue(value);
-  } catch (err) {
-    console.error(`vaultic: skipped fingerprinting a secret value: ${(err as Error).message}`);
-  }
-}
+import { safeFingerprint } from '../fingerprint-util.js';
 
 export async function vaultRevealRequest(
   deps: { backend: VaultBackend; approver: ApprovalProvider; audit: AuditLog; fingerprints: FingerprintStore },
@@ -23,7 +16,7 @@ export async function vaultRevealRequest(
     throw new Error(`Reveal ${decision} for ${args.ref} — user did not approve`);
   }
   const value = await backend.getSecretValue(ref);
-  fingerprintValue(fingerprints, value);
+  safeFingerprint(fingerprints, value);
   return {
     value,
     warning: 'One-time reveal. Do NOT write this value to any file or command — hooks will block it.',

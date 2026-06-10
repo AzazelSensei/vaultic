@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { parseVaultRef, redactSecrets, type FingerprintStore, type Manifest } from '@vaultic/shared';
 import type { VaultBackend } from '../backend.js';
+import { safeFingerprint } from '../fingerprint-util.js';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const MAX_OUTPUT_CHARS = 30_000;
@@ -10,14 +11,6 @@ export interface RunResult {
   stdout: string;
   stderr: string;
   timedOut: boolean;
-}
-
-function fingerprintValue(fingerprints: FingerprintStore, value: string): void {
-  try {
-    fingerprints.addValue(value);
-  } catch (err) {
-    console.error(`vaultic: skipped fingerprinting a secret value: ${(err as Error).message}`);
-  }
 }
 
 export async function vaultRun(
@@ -34,7 +27,7 @@ export async function vaultRun(
     const value = await backend.getSecretValue(parseVaultRef(refString));
     injected[envName] = value;
     values.push(value);
-    fingerprintValue(fingerprints, value);
+    safeFingerprint(fingerprints, value);
   }
 
   return new Promise((resolve, reject) => {

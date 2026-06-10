@@ -4,6 +4,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "vaultic-broker": "dist/server.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
   },
