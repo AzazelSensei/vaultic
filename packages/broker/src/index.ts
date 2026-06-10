@@ -2,6 +2,7 @@ export * from './audit.js';
 export * from './config.js';
 export * from './backend.js';
 export * from './infisical.js';
+export * from './fingerprint-util.js';
 export * from './tools/readonly.js';
 export * from './tools/run.js';
 export * from './tools/reveal.js';

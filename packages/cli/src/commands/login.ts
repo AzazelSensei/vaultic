@@ -10,6 +10,20 @@ export interface Credentials {
   telegramBotToken?: string;
 }
 
+interface SiteConfig {
+  siteUrl?: string;
+  workspaces?: Record<string, unknown>;
+}
+
+function readSiteConfig(path: string): SiteConfig {
+  if (!existsSync(path)) return { workspaces: {} };
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as SiteConfig;
+  } catch {
+    throw new Error(`vaultic config invalid JSON: ${path} — check for trailing commas or quotes`);
+  }
+}
+
 const DIR_MODE = 0o700;
 const FILE_MODE = 0o600;
 const CONFIG_FILE = 'config.json';
@@ -25,14 +39,14 @@ export function writeCredentials(dir: string, creds: Credentials): void {
 export function writeSiteUrl(dir: string, siteUrl: string): void {
   mkdirSync(dir, { recursive: true, mode: DIR_MODE });
   const path = join(dir, CONFIG_FILE);
-  const config = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : { workspaces: {} };
+  const config = readSiteConfig(path);
   config.siteUrl = siteUrl;
   if (!config.workspaces) config.workspaces = {};
   writeFileSync(path, JSON.stringify(config, null, 2), { mode: FILE_MODE });
   chmodSync(path, FILE_MODE);
 }
 
-function promptHidden(label: string): Promise<string> {
+export function promptHidden(label: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     const muted = rl as unknown as { output: NodeJS.WriteStream; _writeToOutput?: (s: string) => void };
