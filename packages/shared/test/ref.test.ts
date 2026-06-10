@@ -78,6 +78,19 @@ describe('parseVaultRef', () => {
     }
   });
 
+  it('U+2028/U+2029 ayraçlarını hata mesajından temizler', () => {
+    const refWithLineSep = 'vault://a' + String.fromCharCode(0x2028) + 'b/p/d/K';
+    try {
+      parseVaultRef(refWithLineSep);
+      expect.unreachable('parseVaultRef fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toMatch(/Invalid vault reference/);
+      expect(message).not.toContain(String.fromCharCode(0x2028));
+      expect(message).not.toContain(String.fromCharCode(0x2029));
+    }
+  });
+
   it('vault:// ile başlayan geçersiz girdiyi hata mesajında gösterir', () => {
     expect(() => parseVaultRef('vault://bad/REF')).toThrow(/Invalid vault reference/);
     try {

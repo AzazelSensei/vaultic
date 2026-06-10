@@ -25,4 +25,9 @@ describe('redactSecrets', () => {
     const b64 = Buffer.from(SECRET).toString('base64');
     expect(redactSecrets(b64, [SECRET])).toBe(b64);
   });
+  it('I3: bir değer diğerinin prefix\'iyse uzun olanı tam maskeler (sıra bağımsız)', () => {
+    const result = redactSecrets('k=ABCDEFGHIJKL', ['ABCDEF', 'ABCDEFGHIJKL']);
+    expect(result).not.toContain('GHIJKL');
+    expect(result).toBe(`k=${REDACTED_PLACEHOLDER}`);
+  });
 });

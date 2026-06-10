@@ -10,7 +10,7 @@ const REF_PATTERN =
 
 const MAX_ECHOED_REF_LENGTH = 32;
 const VAULT_REF_PREFIX = 'vault://';
-const CONTROL_CHARS_PATTERN = /[\x00-\x1f]/g;
+const CONTROL_CHARS_PATTERN = /[\x00-\x1f\x7f\u2028\u2029]/g;
 
 export function parseVaultRef(ref: string): VaultRef {
   const m = REF_PATTERN.exec(ref);
