@@ -1,0 +1,17 @@
+services:
+  - name: anthropic
+    host: api.anthropic.com
+    auth:
+      type: api-key
+      header: x-api-key
+      key: ANTHROPIC_API_KEY
+  - name: openai
+    host: api.openai.com
+    auth:
+      type: bearer
+      key: OPENAI_API_KEY
+  - name: github
+    host: api.github.com
+    auth:
+      type: bearer
+      key: GITHUB_TOKEN
