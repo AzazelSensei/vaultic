@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadManifest, MANIFEST_FILENAME } from '@vaultic/shared';
-import { writeManifestTemplate, ensureGitignoreEnv } from '../src/commands/init.js';
+import { writeManifestTemplate, ensureGitignoreEnv, buildInitHint } from '../src/commands/init.js';
 
 function tmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'vinit-'));
@@ -34,6 +34,16 @@ describe('writeManifestTemplate', () => {
     ).toThrow(/already exists/);
     const manifest = loadManifest(dir);
     expect(manifest?.workspace).toBe('acme');
+  });
+});
+
+describe('buildInitHint', () => {
+  it('ipucu gerçek workspace/project/env değerlerini içerir', () => {
+    const hint = buildInitHint({ workspace: 'acme', project: 'web', env: 'prod' });
+    expect(hint).toContain('acme');
+    expect(hint).toContain('web');
+    expect(hint).toContain('prod');
+    expect(hint).toContain('vault://acme/web/prod/');
   });
 });
 

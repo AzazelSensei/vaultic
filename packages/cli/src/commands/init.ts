@@ -27,6 +27,10 @@ export function writeManifestTemplate(dir: string, input: InitInput): void {
   writeFileSync(path, stringify(manifest), 'utf8');
 }
 
+export function buildInitHint(input: InitInput): string {
+  return `Add secrets with refs like vault://${input.workspace}/${input.project}/${input.env}/KEY_NAME (values via hidden prompt).`;
+}
+
 export function ensureGitignoreEnv(dir: string): void {
   const path = join(dir, GITIGNORE_FILE);
   if (!existsSync(path)) {
@@ -55,14 +59,15 @@ export function registerInit(program: Command): void {
     .option('--env <env>', 'default environment hint', DEFAULT_ENV)
     .action((opts: InitOptions) => {
       const dir = process.cwd();
-      writeManifestTemplate(dir, {
+      const input: InitInput = {
         workspace: opts.workspace,
         project: opts.project,
         env: opts.env ?? DEFAULT_ENV,
-      });
+      };
+      writeManifestTemplate(dir, input);
       ensureGitignoreEnv(dir);
       process.stdout.write(`Created ${MANIFEST_FILENAME} and ensured ${ENV_ENTRY} in ${GITIGNORE_FILE}.\n`);
-      process.stdout.write('Add secrets with `vaultic set vault://ws/proj/env/KEY` (values via hidden prompt).\n');
+      process.stdout.write(`${buildInitHint(input)}\n`);
       process.stdout.write('Tip: install gitleaks to block secret commits — `brew install gitleaks` then `gitleaks protect`.\n');
     });
 }
