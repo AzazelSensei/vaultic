@@ -9,6 +9,7 @@ export interface AuditEvent {
   decision?: 'approved' | 'denied' | 'timeout';
   channel?: 'touchid' | 'telegram' | 'none';
   detail?: string;
+  outcome?: 'ok' | 'error';
 }
 
 export class AuditLog {

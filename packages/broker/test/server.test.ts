@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { buildServer } from '../src/server.js';
@@ -43,5 +46,25 @@ describe('buildServer', () => {
     const result = await client.callTool({ name: 'vault_check', arguments: {} });
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result)).toMatch(/aiv\.yaml|vaultic init/);
+  });
+  it('vault_run başarısız olduğunda outcome:error ile audit\'lenir', async () => {
+    const configDir = mkdtempSync(join(tmpdir(), 'vaultic-audit-'));
+    const prev = process.env.VAULTIC_CONFIG_DIR;
+    process.env.VAULTIC_CONFIG_DIR = configDir;
+    try {
+      const server = buildServer({ backend, projectDir: '/tmp/nonexistent-vaultic-run-xyz' });
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      const client = new Client({ name: 'test', version: '0.0.0' });
+      await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+      const result = await client.callTool({ name: 'vault_run', arguments: { command: 'echo hi' } });
+      expect(result.isError).toBe(true);
+      const lines = readFileSync(join(configDir, 'audit.jsonl'), 'utf8').trim().split('\n');
+      const runEntry = lines.map((l) => JSON.parse(l)).find((e) => e.action === 'run');
+      expect(runEntry).toBeDefined();
+      expect(runEntry.outcome).toBe('error');
+    } finally {
+      if (prev === undefined) delete process.env.VAULTIC_CONFIG_DIR;
+      else process.env.VAULTIC_CONFIG_DIR = prev;
+    }
   });
 });

@@ -49,4 +49,29 @@ describe('InfisicalBackend', () => {
     await expect(makeBackend().listSecrets({ workspace: 'ws', project: 'nope', environment: 'prod' }))
       .rejects.toThrow(/vaultic link/i);
   });
+  it('SDK hatası sanitize edilir — secret değeri AI kanalına sızmaz', async () => {
+    const leakingSecretsApi = {
+      listSecrets: vi.fn(),
+      getSecret: vi.fn().mockRejectedValue(new Error('upstream 500: secret sk-test-LEAK-9999 not retrievable')),
+      createSecret: vi.fn(),
+    };
+    const leakingSdk = {
+      auth: () => ({ universalAuth: { login: vi.fn().mockResolvedValue(undefined) } }),
+      secrets: () => leakingSecretsApi,
+    };
+    const backend = new InfisicalBackend({
+      config: { siteUrl: 'https://inf.example.com', workspaces: { ws: { projects: { proj: { projectId: 'pid-1' } } } } },
+      credentials: { clientId: 'cid', clientSecret: 'cs' },
+      sdkFactory: () => leakingSdk as never,
+    });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const promise = backend.getSecretValue({ workspace: 'ws', project: 'proj', environment: 'prod', key: 'OPENAI_API_KEY' });
+      await expect(promise).rejects.toThrow(/Infisical backend error/);
+      const caught = await promise.catch((e: Error) => e);
+      expect(caught.message).not.toContain('sk-test-LEAK-9999');
+    } finally {
+      errSpy.mockRestore();
+    }
+  });
 });

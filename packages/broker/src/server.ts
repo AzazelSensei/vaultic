@@ -12,6 +12,7 @@ import { AuditLog } from './audit.js';
 import { TouchIdApprover } from './approval/touchid.js';
 import { TelegramApprover } from './approval/telegram.js';
 import { resolveApprover } from './approval/resolve.js';
+import type { ApprovalProvider } from './approval/types.js';
 import { vaultCheck, vaultList, vaultRef } from './tools/readonly.js';
 import { vaultRun } from './tools/run.js';
 import { vaultRevealRequest, vaultSetRequest } from './tools/reveal.js';
@@ -27,11 +28,9 @@ function fail(err: unknown) {
   return { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
 }
 
-async function closeApprover(approver: unknown): Promise<void> {
-  const closable = approver as { close?: () => Promise<void> | void };
-  if (typeof closable.close !== 'function') return;
+async function closeApprover(approver: ApprovalProvider): Promise<void> {
   try {
-    await closable.close();
+    await approver.close?.();
   } catch (err) {
     console.error(`vaultic: approver close failed: ${(err as Error).message}`);
   }
@@ -98,12 +97,15 @@ export function buildServer(deps: { backend: VaultBackend; projectDir: string })
       inputSchema: { command: z.string(), cwd: z.string().optional(), timeoutMs: z.number().optional() },
     },
     async (args) => {
+      let outcome: 'ok' | 'error' = 'error';
       try {
         const result = await vaultRun({ backend, manifest: manifest(), fingerprints }, args);
-        audit.record({ action: 'run', detail: args.command.slice(0, COMMAND_AUDIT_MAX) });
+        outcome = 'ok';
         return ok(result);
       } catch (e) {
         return fail(e);
+      } finally {
+        audit.record({ action: 'run', detail: args.command.slice(0, COMMAND_AUDIT_MAX), outcome });
       }
     },
   );

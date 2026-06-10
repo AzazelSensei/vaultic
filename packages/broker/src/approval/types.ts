@@ -9,4 +9,5 @@ export interface ApprovalProvider {
   readonly channel: 'touchid' | 'telegram';
   isAvailable(): boolean;
   requestApproval(req: ApprovalRequest): Promise<ApprovalDecision>;
+  close?(): Promise<void> | void;
 }

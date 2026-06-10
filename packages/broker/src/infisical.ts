@@ -19,12 +19,23 @@ export class InfisicalBackend implements VaultBackend {
     this.options = options;
   }
 
+  private async guard<T>(op: string, ctx: string, fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (cause) {
+      console.error(`vaultic: Infisical SDK ${op} failed for ${ctx}:`, cause);
+      throw new Error(`Infisical backend error during ${op} for ${ctx} — see broker stderr for details`);
+    }
+  }
+
   private async getClient(): Promise<InfisicalSDK> {
     if (this.client) return this.client;
     const factory = this.options.sdkFactory ?? ((siteUrl: string) => new InfisicalSDK({ siteUrl }));
     const client = factory(this.options.config.siteUrl);
     const { clientId, clientSecret } = this.options.credentials;
-    await client.auth().universalAuth.login({ clientId, clientSecret });
+    await this.guard('login', this.options.config.siteUrl, () =>
+      client.auth().universalAuth.login({ clientId, clientSecret }),
+    );
     this.client = client;
     return client;
   }
@@ -32,13 +43,15 @@ export class InfisicalBackend implements VaultBackend {
   async listSecrets(ref: Pick<VaultRef, 'workspace' | 'project' | 'environment'>): Promise<SecretMeta[]> {
     const projectId = resolveProjectId(this.options.config, ref.workspace, ref.project);
     const client = await this.getClient();
-    const result = await client.secrets().listSecrets({
-      projectId,
-      environment: ref.environment,
-      secretPath: SECRET_PATH,
-      viewSecretValue: false,
-      expandSecretReferences: false,
-    });
+    const result = await this.guard('list', `${projectId}/${ref.environment}`, () =>
+      client.secrets().listSecrets({
+        projectId,
+        environment: ref.environment,
+        secretPath: SECRET_PATH,
+        viewSecretValue: false,
+        expandSecretReferences: false,
+      }),
+    );
     return result.secrets.map((s) => ({
       key: s.secretKey,
       environment: ref.environment,
@@ -49,24 +62,28 @@ export class InfisicalBackend implements VaultBackend {
   async getSecretValue(ref: VaultRef): Promise<string> {
     const projectId = resolveProjectId(this.options.config, ref.workspace, ref.project);
     const client = await this.getClient();
-    const secret = await client.secrets().getSecret({
-      projectId,
-      environment: ref.environment,
-      secretPath: SECRET_PATH,
-      secretName: ref.key,
-    });
+    const secret = await this.guard('get', `${projectId}/${ref.environment}`, () =>
+      client.secrets().getSecret({
+        projectId,
+        environment: ref.environment,
+        secretPath: SECRET_PATH,
+        secretName: ref.key,
+      }),
+    );
     return secret.secretValue;
   }
 
   async setSecret(ref: VaultRef, value: string): Promise<void> {
     const projectId = resolveProjectId(this.options.config, ref.workspace, ref.project);
     const client = await this.getClient();
-    await client.secrets().createSecret(ref.key, {
-      projectId,
-      environment: ref.environment,
-      secretPath: SECRET_PATH,
-      secretValue: value,
-      type: SecretType.Shared,
-    });
+    await this.guard('create', `${projectId}/${ref.environment}`, () =>
+      client.secrets().createSecret(ref.key, {
+        projectId,
+        environment: ref.environment,
+        secretPath: SECRET_PATH,
+        secretValue: value,
+        type: SecretType.Shared,
+      }),
+    );
   }
 }
