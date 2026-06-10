@@ -3,3 +3,4 @@ dist/
 .env
 *.local.json
 deploy/.env
+helpers/touchid/vaultic-auth-helper
