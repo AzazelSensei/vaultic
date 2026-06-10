@@ -28,4 +28,9 @@ describe('config', () => {
   it('eşlenmemiş proje için vaultic link öneren hata verir', () => {
     expect(() => resolveProjectId(loadConfig(tmpConfigDir(CFG)), 'ws1', 'nope')).toThrow(/vaultic link/);
   });
+  it('bozuk JSON (trailing comma) anlamlı hata verir', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'vcfg-bad-'));
+    writeFileSync(join(dir, 'config.json'), '{ "siteUrl": "https://x.example.com", }');
+    expect(() => loadConfig(dir)).toThrow(/invalid JSON/);
+  });
 });

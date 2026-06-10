@@ -26,7 +26,12 @@ export function configDir(): string {
 function loadJsonFile(dir: string, name: string, hint: string): unknown {
   const path = join(dir, name);
   if (!existsSync(path)) throw new Error(`vaultic config missing: ${path} — run \`${hint}\` first`);
-  return JSON.parse(readFileSync(path, 'utf8'));
+  const raw = readFileSync(path, 'utf8');
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`vaultic config invalid JSON: ${path} — check for trailing commas or quotes`);
+  }
 }
 
 export function loadConfig(dir = configDir()): VaulticConfig {
