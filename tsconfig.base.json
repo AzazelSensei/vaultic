@@ -7,7 +7,6 @@
     "declaration": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": { "@vaultic/shared": ["packages/shared/src/index.ts"] }
+    "paths": { "@vaultic/shared": ["./packages/shared/src/index.ts"] }
   }
 }
