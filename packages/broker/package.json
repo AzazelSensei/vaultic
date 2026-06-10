@@ -1,0 +1,20 @@
+{
+  "name": "vaultic-broker",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "dependencies": {
+    "@infisical/sdk": "^5.0.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@vaultic/shared": "workspace:*",
+    "grammy": "^1.43.0",
+    "zod": "^4.4.3"
+  }
+}
