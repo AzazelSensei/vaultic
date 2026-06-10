@@ -10,6 +10,7 @@ const REF_PATTERN =
 
 const MAX_ECHOED_REF_LENGTH = 32;
 const VAULT_REF_PREFIX = 'vault://';
+const CONTROL_CHARS_PATTERN = /[\x00-\x1f]/g;
 
 export function parseVaultRef(ref: string): VaultRef {
   const m = REF_PATTERN.exec(ref);
@@ -17,8 +18,11 @@ export function parseVaultRef(ref: string): VaultRef {
     if (!ref.startsWith(VAULT_REF_PREFIX)) {
       throw new Error('Invalid vault reference (value does not start with vault://, redacted)');
     }
+    const sanitized = ref.replace(CONTROL_CHARS_PATTERN, '');
     const echoed =
-      ref.length > MAX_ECHOED_REF_LENGTH ? `${ref.slice(0, MAX_ECHOED_REF_LENGTH)}…` : ref;
+      sanitized.length > MAX_ECHOED_REF_LENGTH
+        ? `${sanitized.slice(0, MAX_ECHOED_REF_LENGTH)}…`
+        : sanitized;
     throw new Error(
       `Invalid vault reference: ${echoed} (expected vault://workspace/project/env/UPPER_SNAKE_KEY)`,
     );

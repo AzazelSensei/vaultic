@@ -69,6 +69,32 @@ describe('loadManifest', () => {
       expect(message).toMatch(/Invalid vault reference/);
     }
   });
+  it('bilinmeyen anahtar pozisyonuna yapıştırılan secret\'ı redact eder', () => {
+    const secret = 'sk-live-' + 'C'.repeat(32);
+    const bad = VALID + `${secret}: oops\n`;
+    try {
+      loadManifest(writeTmpManifest(bad));
+      expect.unreachable('loadManifest fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toContain('redacted');
+      expect(message).not.toContain(secret);
+      expect(message).toMatch(/Invalid \.aiv\.yaml in/);
+    }
+  });
+  it('env adı pozisyonuna yapıştırılan secret\'ı kısaltır', () => {
+    const secret = 'sk-live-' + 'D'.repeat(32);
+    const bad = VALID.replace('OPENAI_API_KEY:', `${secret}:`);
+    try {
+      loadManifest(writeTmpManifest(bad));
+      expect.unreachable('loadManifest fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toMatch(/env var name/i);
+      expect(message).toContain('…');
+      expect(message).not.toContain(secret);
+    }
+  });
   it('cross-workspace referansa bilinçli olarak izin verilir', () => {
     const cross = VALID.replace(
       'vault://blackhole-labs/payment-api/prod/OPENAI_API_KEY',

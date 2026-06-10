@@ -67,6 +67,17 @@ describe('parseVaultRef', () => {
     }
   });
 
+  it('echo edilen girdideki kontrol karakterlerini temizler', () => {
+    try {
+      parseVaultRef('vault://a\nsk-SMUGGLED');
+      expect.unreachable('parseVaultRef fırlatmalıydı');
+    } catch (err) {
+      const message = (err as Error).message;
+      expect(message).toMatch(/Invalid vault reference/);
+      expect(message).not.toContain('\n');
+    }
+  });
+
   it('vault:// ile başlayan geçersiz girdiyi hata mesajında gösterir', () => {
     expect(() => parseVaultRef('vault://bad/REF')).toThrow(/Invalid vault reference/);
     try {

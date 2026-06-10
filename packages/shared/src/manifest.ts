@@ -6,6 +6,17 @@ import { parseVaultRef } from './ref.js';
 
 export const MANIFEST_FILENAME = '.aiv.yaml';
 const ENV_NAME_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+const MAX_ECHOED_ENV_NAME_LENGTH = 16;
+const QUOTED_TOKEN_PATTERN = /(["'])[A-Za-z0-9+/=_-]{16,}\1/g;
+
+function truncateEnvName(envName: string): string {
+  if (envName.length <= MAX_ECHOED_ENV_NAME_LENGTH) return envName;
+  return `${envName.slice(0, MAX_ECHOED_ENV_NAME_LENGTH)}…`;
+}
+
+function scrubQuotedTokens(detail: string): string {
+  return detail.replace(QUOTED_TOKEN_PATTERN, '$1[redacted]$1');
+}
 
 const ManifestSchema = z.strictObject({
   workspace: z.string().min(1),
@@ -24,11 +35,13 @@ export function loadManifest(dir: string): Manifest | undefined {
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     const detail = err instanceof z.ZodError ? z.prettifyError(err) : (err as Error).message;
-    throw new Error(`Invalid ${MANIFEST_FILENAME} in ${dir}: ${detail}`);
+    throw new Error(`Invalid ${MANIFEST_FILENAME} in ${dir}: ${scrubQuotedTokens(detail)}`);
   }
   for (const [envName, ref] of Object.entries(manifest.needs)) {
     if (!ENV_NAME_PATTERN.test(envName)) {
-      throw new Error(`Invalid env var name in manifest: ${envName} (expected UPPER_SNAKE_CASE)`);
+      throw new Error(
+        `Invalid env var name in manifest: ${truncateEnvName(envName)} (expected UPPER_SNAKE_CASE)`,
+      );
     }
     try {
       parseVaultRef(ref);
