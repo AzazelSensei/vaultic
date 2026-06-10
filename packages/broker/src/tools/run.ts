@@ -41,13 +41,20 @@ export async function vaultRun(
     const child = spawn('bash', ['-c', args.command], {
       cwd: args.cwd ?? process.cwd(),
       env: { ...process.env, ...injected },
+      detached: true,
     });
     let stdout = '';
     let stderr = '';
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGKILL');
+      if (child.pid !== undefined) {
+        try {
+          process.kill(-child.pid, 'SIGKILL');
+        } catch {
+          void 0;
+        }
+      }
     }, args.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
     child.stdout.on('data', (d: Buffer) => {
@@ -63,7 +70,7 @@ export async function vaultRun(
     child.on('close', (code) => {
       clearTimeout(timer);
       resolve({
-        exitCode: code ?? 1,
+        exitCode: timedOut ? 124 : (code ?? 1),
         stdout: redactSecrets(stdout, values).slice(0, MAX_OUTPUT_CHARS),
         stderr: redactSecrets(stderr, values).slice(0, MAX_OUTPUT_CHARS),
         timedOut,

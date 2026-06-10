@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { vaultRun } from '../src/tools/run.js';
 import { FingerprintStore } from '@vaultic/shared';
 import type { VaultBackend } from '../src/backend.js';
@@ -82,4 +83,28 @@ describe('vaultRun', () => {
     );
     expect(r.stdout).not.toContain(SECRET);
   });
+
+  it(
+    "timeout: torun süreç secret'larla hayatta kalmaz, promise zamanında çözülür",
+    async () => {
+      const leakFile = join(mkdtempSync(join(tmpdir(), 'run-leak-')), 'leak.txt');
+      const command = `( sleep 5; echo "$MY_API_KEY" > ${leakFile} ) & echo started`;
+      const start = Date.now();
+      const r = await vaultRun(
+        { backend, manifest, fingerprints: makeStore() },
+        { command, timeoutMs: 800 },
+      );
+      const elapsed = Date.now() - start;
+
+      expect(elapsed).toBeLessThan(2000);
+      expect(r.timedOut).toBe(true);
+      expect(r.exitCode).toBe(124);
+
+      await sleep(300);
+      if (existsSync(leakFile)) {
+        expect(readFileSync(leakFile, 'utf8')).not.toContain(SECRET);
+      }
+    },
+    10000,
+  );
 });
