@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 
 const MIN_TOKEN_LENGTH = 8;
@@ -53,6 +53,24 @@ function containsFingerprinted(text, store) {
   return false;
 }
 
+function protectedDirs() {
+  const dirs = [resolve(configDir()), resolve(join(homedir(), '.config', 'vaultic'))];
+  return [...new Set(dirs)];
+}
+
+function expandPath(p, cwd) {
+  if (!p) return undefined;
+  let out = p;
+  if (out.startsWith('~')) out = join(homedir(), out.slice(1));
+  return resolve(cwd ?? process.cwd(), out);
+}
+
+function isInProtectedDir(filePath, dirs, cwd) {
+  const r = expandPath(filePath, cwd);
+  if (!r) return false;
+  return dirs.some((d) => r === d || r.startsWith(d + sep));
+}
+
 function deny(reason) {
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
@@ -71,10 +89,19 @@ try {
   process.exit(0);
 }
 
-const serialized = JSON.stringify(input.tool_input ?? {});
-const protectedDir = join(homedir(), '.config', 'vaultic');
-if (serialized.includes(protectedDir) || serialized.includes('.config/vaultic') || serialized.includes('/vaultic/fingerprints')) {
-  deny('vaultic: the vaultic config/credential store is off-limits to agents — use vault_ref/vault_run instead');
+const toolInput = input.tool_input ?? {};
+const serialized = JSON.stringify(toolInput);
+const dirs = protectedDirs();
+const cwd = typeof input.cwd === 'string' ? input.cwd : undefined;
+const filePath = toolInput.file_path ?? toolInput.notebook_path;
+const PROTECTED_REASON = 'vaultic: the vaultic config/credential store is off-limits to agents — use vault_ref/vault_run instead';
+if (typeof filePath === 'string' && isInProtectedDir(filePath, dirs, cwd)) {
+  deny(PROTECTED_REASON);
+}
+if (typeof toolInput.command === 'string') {
+  const cmd = toolInput.command;
+  const hit = dirs.some((d) => cmd.includes(d)) || cmd.includes('.config/vaultic') || cmd.includes('~/.config/vaultic');
+  if (hit) deny(PROTECTED_REASON);
 }
 const store = loadStore();
 if (containsFingerprinted(serialized, store)) {

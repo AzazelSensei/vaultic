@@ -103,4 +103,40 @@ describe('vaultic-pretooluse hook', () => {
     const out = await runHook(undefined, configDir, 'not json');
     expect(out).toBeUndefined();
   });
+
+  it('REGRESSION: dosya yolu store dışı ama content path metni geçiyor → karar yok', async () => {
+    const out = await runHook(
+      {
+        tool_name: 'Write',
+        tool_input: {
+          file_path: '/tmp/x.md',
+          content: 'The store lives in ~/.config/vaultic/credentials.json',
+        },
+      },
+      configDir,
+    );
+    expect(out).toBeUndefined();
+  });
+
+  it('Write file_path store içindeyse (VAULTIC_CONFIG_DIR) → deny', async () => {
+    const out = await runHook(
+      {
+        tool_name: 'Write',
+        tool_input: { file_path: join(configDir, 'credentials.json'), content: 'x' },
+      },
+      configDir,
+    );
+    expect(out?.hookSpecificOutput.permissionDecision).toBe('deny');
+  });
+
+  it('Edit file_path store içindeyse → deny', async () => {
+    const out = await runHook(
+      {
+        tool_name: 'Edit',
+        tool_input: { file_path: join(configDir, 'fingerprints.json'), old_string: 'a', new_string: 'b' },
+      },
+      configDir,
+    );
+    expect(out?.hookSpecificOutput.permissionDecision).toBe('deny');
+  });
 });
