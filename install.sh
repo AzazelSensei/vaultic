@@ -92,6 +92,10 @@ check_node() {
 
 check_pnpm() {
   if ! command -v pnpm >/dev/null 2>&1; then
+    if (( DRY_RUN )); then
+      dry "pnpm bulunamadı; çalıştırılacak: corepack enable pnpm"
+      return 0
+    fi
     warn "pnpm bulunamadı, corepack ile etkinleştirmeyi deniyorum..."
     corepack enable pnpm >/dev/null 2>&1 || true
   fi
