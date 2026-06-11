@@ -1,7 +1,9 @@
 {
   "name": "ai-credentials-vault",
   "private": true,
-  "engines": { "node": ">=20.10" },
+  "engines": {
+    "node": ">=20.10"
+  },
   "scripts": {
     "build": "pnpm -r build",
     "test": "vitest run",
@@ -11,5 +13,6 @@
     "typescript": "^5.5.0",
     "vitest": "^3.0.0",
     "tsx": "^4.0.0"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }

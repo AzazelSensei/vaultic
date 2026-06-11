@@ -206,5 +206,7 @@ docs/plans/         design & implementation documents
 install.sh          idempotent installer (build, CLI symlink, hooks, skill, MCP registration)
 ```
 
-Licensed under the [MIT License](LICENSE). Contributions welcome — open an issue or PR; never put a
-real secret value in a test fixture (use `sk-test-...` fakes).
+Licensed under the [GNU AGPL-3.0-or-later](LICENSE): you may use, modify and self-host vaultic
+freely, but if you distribute it or run a modified version as a network service, you must publish
+your changes under the same license — no closed-source forks. Contributions welcome — open an issue
+or PR; never put a real secret value in a test fixture (use `sk-test-...` fakes).
