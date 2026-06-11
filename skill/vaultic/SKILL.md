@@ -16,6 +16,14 @@ NEVER ask the user to paste a secret. NEVER write a real secret value into any f
 - `vault_set_request` — when a secret is missing: this tells you to ask the user to run `vaultic set <ref>` in their terminal. The HUMAN enters the value; you never collect it.
 - `vault_reveal_request` — LAST RESORT only: request a one-time reveal of an actual value (e.g. to paste into a third-party web dashboard for the user). Requires human approval (Touch ID / Telegram) and is audited. Never write the revealed value anywhere.
 
+## First run — not wired up yet?
+If `vault_check` reports the broker isn't configured, or `~/.config/vaultic/config.json` has no
+linked project, or the user asks you to "set up / connect the vault" — the backend isn't deployed
+yet. Open [`SETUP.md`](./SETUP.md) (next to this file) and run that setup playbook YOURSELF: you
+deploy the Infisical backend, create the machine identity, and wire the local client. Don't tell
+the user to paste commands — execute them. The human only picks where it goes and types secret
+values at hidden prompts. Once `claude mcp list` shows vaultic **Connected**, continue below.
+
 ## Workflow
 1. Session start / `.aiv.yaml` present → call `vault_check`.
 2. Need a secret referenced in code/config → write the env var NAME; map it in `.aiv.yaml` (use `vault_ref` for the reference string). Read it at runtime from `process.env` / the injected env, never inline the value.

@@ -15,6 +15,12 @@ download the current one at install time (see below). This repo only ships the
 > This is the **Infisical backend** doc. For paranoid-mode MITM proxy deployment see
 > [`agent-vault/README.md`](./agent-vault/README.md) — a separate, unrelated component.
 
+> **Prefer to let the agent do it?** The vaultic skill ships an agent-driven setup playbook —
+> [`skill/vaultic/SETUP.md`](../skill/vaultic/SETUP.md). With the skill installed, tell your AI
+> agent to "set up vaultic" and it runs every step below itself (asks where to deploy, generates
+> secrets on the target, wires the machine identity and local client), never asking you to paste
+> commands. The steps here are the manual reference the playbook automates.
+
 ---
 
 ## 1. Bring up the backend

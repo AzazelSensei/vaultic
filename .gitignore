@@ -4,3 +4,6 @@ dist/
 *.local.json
 deploy/.env
 helpers/touchid/vaultic-auth-helper
+
+# Playwright MCP scratch output
+.playwright-mcp/
