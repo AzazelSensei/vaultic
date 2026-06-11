@@ -159,7 +159,8 @@ export function buildServer(deps: { backend: VaultBackend; projectDir: string })
   return server;
 }
 
-const isDirectRun = process.argv[1]?.endsWith('server.js');
+const entryPath = process.argv[1] ?? '';
+const isDirectRun = entryPath.endsWith('server.js') || entryPath.endsWith('vaultic-broker');
 if (isDirectRun) {
   const config = loadConfig();
   const credentials = loadCredentials();

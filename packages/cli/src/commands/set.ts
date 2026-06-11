@@ -11,7 +11,7 @@ import {
 import { parseVaultRef, formatVaultRef, FingerprintStore, type VaultRef } from '@vaultic/shared';
 import { promptHidden } from './login.js';
 
-const AUDIT_FILE = 'audit.log';
+const AUDIT_FILE = 'audit.jsonl';
 const SET_PROMPT = 'Secret value: ';
 
 interface InlineValueArgs {

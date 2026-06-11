@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import type { ApprovalDecision, ApprovalProvider, ApprovalRequest } from './types.js';
 
 type ExecFn = (path: string, args: string[]) => Promise<{ exitCode: number }>;
@@ -17,7 +18,8 @@ export class TouchIdApprover implements ApprovalProvider {
   isAvailable(): boolean {
     const env = this.options.env ?? process.env;
     if (env.SSH_CONNECTION || env.SSH_TTY) return false;
-    return process.platform === 'darwin' || this.options.env !== undefined;
+    if (this.options.env !== undefined) return true;
+    return process.platform === 'darwin' && existsSync(this.options.helperPath);
   }
 
   async requestApproval(req: ApprovalRequest): Promise<ApprovalDecision> {
