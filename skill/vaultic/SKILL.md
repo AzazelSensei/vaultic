@@ -24,6 +24,13 @@ deploy the Infisical backend, create the machine identity, and wire the local cl
 the user to paste commands — execute them. The human only picks where it goes and types secret
 values at hidden prompts. Once `claude mcp list` shows vaultic **Connected**, continue below.
 
+## Bringing existing secrets in
+If the user wants to move secrets that already live in `.env` files into the vault ("import my
+.envs", "migrate this project") — open [`IMPORT.md`](./IMPORT.md) and run that playbook YOURSELF.
+One Infisical project per repo; you import every value **without ever reading it** (a loop pipes
+each value straight into `vaultic set`), then write a `.aiv.yaml` of references. Never open a `.env`
+and read its values into your context.
+
 ## Workflow
 1. Session start / `.aiv.yaml` present → call `vault_check`.
 2. Need a secret referenced in code/config → write the env var NAME; map it in `.aiv.yaml` (use `vault_ref` for the reference string). Read it at runtime from `process.env` / the injected env, never inline the value.
